@@ -1,5 +1,5 @@
 import type React from "react";
-import { StyleProp, ScrollViewProps, ViewabilityConfig, ViewabilityConfigCallbackPairs, ViewStyle, ColorValue } from "react-native";
+import { StyleProp, ScrollViewProps, ViewabilityConfig, ViewabilityConfigCallbackPairs, ViewStyle } from "react-native";
 import { BlankAreaEventHandler } from "./native/auto-layout/AutoLayoutView";
 import ViewToken from "./viewability/ViewToken";
 export interface ListRenderItemInfo<TItem> {
@@ -17,17 +17,7 @@ export interface ListRenderItemInfo<TItem> {
 export declare type RenderTarget = "Cell" | "StickyHeader" | "Measurement";
 export declare const RenderTargetOptions: Record<string, RenderTarget>;
 export declare type ListRenderItem<TItem> = (info: ListRenderItemInfo<TItem>) => React.ReactElement | null;
-export interface ContentStyle {
-    backgroundColor?: ColorValue;
-    paddingTop?: string | number;
-    paddingLeft?: string | number;
-    paddingRight?: string | number;
-    paddingBottom?: string | number;
-    padding?: string | number;
-    paddingVertical?: string | number;
-    paddingHorizontal?: string | number;
-    flexGrow?: number;
-}
+export declare type ContentStyle = Pick<ViewStyle, "backgroundColor" | "paddingTop" | "paddingLeft" | "paddingRight" | "paddingBottom" | "padding" | "paddingVertical" | "paddingHorizontal" | "flexGrow">;
 export interface FlashListProps<TItem> extends ScrollViewProps {
     /**
      * Takes an item from `data` and renders it into the list. Typical usage:
@@ -37,6 +27,7 @@ export interface FlashListProps<TItem> extends ScrollViewProps {
      * );
      * ...
      * <FlashList data={[{title: 'Title Text', key: 'item1'}]} renderItem={renderItem} />
+     * ```
      *
      * Provides additional metadata like `index`
      *
@@ -145,7 +136,7 @@ export interface FlashListProps<TItem> extends ScrollViewProps {
     /**
      * Used to extract a unique key for a given item at the specified index.
      * Key is used for optimizing performance. Defining `keyExtractor` is also necessary
-     * when doing [layout animations](https://flash-list.docs.shopify.io/guides/layout-animation)
+     * when doing [layout animations](https://shopify.github.io/flash-list/docs/guides/layout-animation)
      * to uniquely identify animated components.
      */
     keyExtractor?: ((item: TItem, index: number) => string) | undefined;

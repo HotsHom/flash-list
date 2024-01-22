@@ -24,8 +24,8 @@ var FlashList = /** @class */ (function (_super) {
         var _a;
         _this = _super.call(this, props) || this;
         _this.listFixedDimensionSize = 0;
-        _this.transformStyle = { transform: [{ scaleY: -1 }] };
-        _this.transformStyleHorizontal = { transform: [{ scaleX: -1 }] };
+        _this.transformStyle = PlatformHelper_1.PlatformConfig.invertedTransformStyle;
+        _this.transformStyleHorizontal = PlatformHelper_1.PlatformConfig.invertedTransformStyleHorizontal;
         _this.distanceFromWindow = 0;
         _this.contentStyle = {
             paddingBottom: 0,
@@ -259,7 +259,7 @@ var FlashList = /** @class */ (function (_super) {
         return _this;
     }
     FlashList.prototype.validateProps = function () {
-        var _a;
+        var _a, _b;
         if (this.props.onRefresh && typeof this.props.refreshing !== "boolean") {
             throw new CustomError_1.default(ExceptionList_1.default.refreshBooleanMissing);
         }
@@ -271,7 +271,9 @@ var FlashList = /** @class */ (function (_super) {
             throw new CustomError_1.default(ExceptionList_1.default.columnsWhileHorizontalNotSupported);
         }
         // `createAnimatedComponent` always passes a blank style object. To avoid warning while using AnimatedFlashList we've modified the check
-        if (Object.keys(this.props.style || {}).length > 0) {
+        // `style` prop can be an array. So we need to validate every object in array. Check: https://github.com/Shopify/flash-list/issues/651
+        if (__DEV__ &&
+            Object.keys(react_native_1.StyleSheet.flatten((_b = this.props.style) !== null && _b !== void 0 ? _b : {})).length > 0) {
             console.warn(Warnings_1.default.styleUnsupported);
         }
         if ((0, ContentContainerUtils_1.hasUnsupportedKeysInContentContainerStyle)(this.props.contentContainerStyle)) {
@@ -280,7 +282,7 @@ var FlashList = /** @class */ (function (_super) {
     };
     // Some of the state variables need to update when props change
     FlashList.getDerivedStateFromProps = function (nextProps, prevState) {
-        var _a;
+        var _a, _b;
         var newState = tslib_1.__assign({}, prevState);
         if (prevState.numColumns !== nextProps.numColumns) {
             newState.numColumns = nextProps.numColumns || 1;
@@ -288,10 +290,10 @@ var FlashList = /** @class */ (function (_super) {
         }
         else if (prevState.layoutProvider.updateProps(nextProps).hasExpired) {
             newState.layoutProvider = FlashList.getLayoutProvider(newState.numColumns, nextProps);
-            // RLV retries to reposition the first visible item on layout provider change.
-            // It's not required in our case so we're disabling it
-            newState.layoutProvider.shouldRefreshWithAnchoring = false;
         }
+        // RLV retries to reposition the first visible item on layout provider change.
+        // It's not required in our case so we're disabling it
+        newState.layoutProvider.shouldRefreshWithAnchoring = Boolean(!((_a = prevState.layoutProvider) === null || _a === void 0 ? void 0 : _a.hasExpired));
         if (nextProps.data !== prevState.data) {
             newState.data = nextProps.data;
             newState.dataProvider = prevState.dataProvider.cloneWithRows(nextProps.data);
@@ -299,7 +301,7 @@ var FlashList = /** @class */ (function (_super) {
                 newState.extraData = tslib_1.__assign({}, prevState.extraData);
             }
         }
-        if (nextProps.extraData !== ((_a = prevState.extraData) === null || _a === void 0 ? void 0 : _a.value)) {
+        if (nextProps.extraData !== ((_b = prevState.extraData) === null || _b === void 0 ? void 0 : _b.value)) {
             newState.extraData = { value: nextProps.extraData };
         }
         newState.renderItem = nextProps.renderItem;
@@ -370,7 +372,7 @@ var FlashList = /** @class */ (function (_super) {
             ? PlatformHelper_1.PlatformConfig.defaultDrawDistance
             : drawDistance;
         return (react_1.default.createElement(StickyHeaderContainer, { overrideRowRenderer: this.stickyOverrideRowRenderer, applyWindowCorrection: this.applyWindowCorrection, stickyHeaderIndices: stickyHeaderIndices, style: this.props.horizontal
-                ? tslib_1.__assign({}, this.getTransform()) : tslib_1.__assign({ flex: 1 }, this.getTransform()) },
+                ? tslib_1.__assign({}, this.getTransform()) : tslib_1.__assign({ flex: 1, overflow: "hidden" }, this.getTransform()) },
             react_1.default.createElement(recyclerlistview_1.ProgressiveListView, tslib_1.__assign({}, restProps, { ref: this.recyclerRef, layoutProvider: this.state.layoutProvider, dataProvider: this.state.dataProvider, rowRenderer: this.emptyRowRenderer, canChangeSize: true, isHorizontal: Boolean(horizontal), scrollViewProps: tslib_1.__assign({ onScrollBeginDrag: this.onScrollBeginDrag, onLayout: this.handleSizeChange, refreshControl: this.props.refreshControl || this.getRefreshControl(), 
                     // Min values are being used to suppress RLV's bounded exception
                     style: { minHeight: 1, minWidth: 1 }, contentContainerStyle: tslib_1.__assign({ backgroundColor: this.contentStyle.backgroundColor, flexGrow: this.contentStyle.flexGrow, 
@@ -498,6 +500,12 @@ var FlashList = /** @class */ (function (_super) {
         enumerable: false,
         configurable: true
     });
+    /**
+     * FlashList will skip using layout cache on next update. Can be useful when you know the layout will change drastically for example, orientation change when used as a carousel.
+     */
+    FlashList.prototype.clearLayoutCacheOnUpdate = function () {
+        this.state.layoutProvider.markExpired();
+    };
     FlashList.defaultProps = {
         data: [],
         numColumns: 1,
